@@ -101,6 +101,9 @@ router.post("/api/MatchOTP", MatchOTP );
 
 router.post("/api/Reset_Password", Reset_Password );
 
+
+router.post("/api/api/api");
+
 // ------------------------------------------------------------------------- Accountant Routes -----------
 
 router.post("/api/Signup_accountant", Signup_accountant );
