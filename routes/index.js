@@ -270,6 +270,6 @@ router.post('/api/SearchEnquirybyStudentUsername/:Search_input' , SearchEnquiryb
 // SearchPaymentbyStudentUsername
 router.post('/api/SearchPaymentbyStudentUsername/:Search_input' , SearchPaymentbyStudentUsername )
 
-router.post('/api/SearchPackagebyPackageName/:Search_input' ,SearchPackagebyPackageName )
+router.post('/api/SearchPackagebyPackageName/:Search_input' , SearchPackagebyPackageName )
 
 module.exports = router;

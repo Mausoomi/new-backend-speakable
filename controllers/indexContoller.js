@@ -1412,7 +1412,11 @@ exports.Make_Payment = catchAsyncErrors(async (req, res, next) => {
     const orderCreateRequest = {
       continueUrl: `http://localhost:3001/ConfirmBooking`,
       // continueUrl: `https://speakable.online:3001/ConfirmBooking`,
+      // continueUrl: `https://main--speakable-new.netlify.app/ConfirmBooking`,
+      // notifyUrl:
+      //   "https://main--speakable-new.netlify.app/Payment_Notification",
       notifyUrl: "http://localhost:3000/Payment_Notification",
+
       customerIp,
       merchantPosId: "475638",
       description: req.body.Desciption,
@@ -1457,123 +1461,123 @@ exports.Make_Payment = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-exports.authorizePayment = catchAsyncErrors(async (req, res) => {
-  try {
-    const orderId = req.params.orderId;
-    console.log(orderId);
-    const authUrl =
-      "https://secure.snd.payu.com/pl/standard/user/oauth/authorize";
-    const authData =
-      "grant_type=client_credentials&client_id=475638&client_secret=59624ea5a5428ec0d8658ca239b972d8";
-    const authResponse = await axios.post(authUrl, authData, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-    const authToken = authResponse.data.access_token;
-    const orderUrl = `https://secure.snd.payu.com/api/v2_1/orders/${orderId}`;
-    const orderHeaders = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
-    };
-    const orderResponse = await axios.get(orderUrl, {
-      headers: orderHeaders,
-    });
-    let buyerUsername = "";
-    if (orderResponse.data) {
-      orderResponse.data.orders.forEach((val, index) => {
-        if (val.buyer) {
-          buyerUsername = val.buyer.firstName;
-        }
-      });
-    }
-    if (buyerUsername) {
-      const student = await Student.findOne({ Username: buyerUsername });
-      if (student) {
-        for (const order of orderResponse.data.orders) {
-          const Product_Id = order.products[0].name; // Assuming you're interested in the first product
-          const Purchase_Amount = order.payMethod.amount;
-          const Method = order.payMethod.type;
-          const Student_ID = student._id;
-          const Pack = await Package.findById(Product_Id).populate(
-            "Teacher_IDs"
-          );
-          console.log(Pack);
-          const existingData = await CustomPackage.findOne({ Student_ID:Student_ID, Package_ID:Pack._id });
-          console.log(existingData)
-          // Map Teacher_IDs and extract Availability
-          const Teacher_IDs = await Pack.Teacher_IDs
-          // Create a new booking
-          const Status = "Scheduled";
-          console.log(Pack.Student_ID === Student_ID);
-          const existingBooking = await Booking.findOne({
-            Student_ID,
-            Package_ID: Product_Id,
-          });
-          if (!existingBooking) {
-            const newBooking = new Booking({
-              Student_ID,
-              Teacher_ID: Teacher_IDs,
-              Package_ID: Product_Id,
-              Status,
-              Scheduled_Dates:[existingData.Scheduled_Dates],
-            });
+// exports.authorizePayment = catchAsyncErrors(async (req, res) => {
+//   try {
+//     const orderId = req.params.orderId;
+//     console.log(orderId);
+//     const authUrl =
+//       "https://secure.snd.payu.com/pl/standard/user/oauth/authorize";
+//     const authData =
+//       "grant_type=client_credentials&client_id=475638&client_secret=59624ea5a5428ec0d8658ca239b972d8";
+//     const authResponse = await axios.post(authUrl, authData, {
+//       headers: {
+//         "Content-Type": "application/x-www-form-urlencoded",
+//       },
+//     });
+//     const authToken = authResponse.data.access_token;
+//     const orderUrl = `https://secure.snd.payu.com/api/v2_1/orders/${orderId}`;
+//     const orderHeaders = {
+//       "Content-Type": "application/json",
+//       Authorization: `Bearer ${authToken}`,
+//     };
+//     const orderResponse = await axios.get(orderUrl, {
+//       headers: orderHeaders,
+//     });
+//     let buyerUsername = "";
+//     if (orderResponse.data) {
+//       orderResponse.data.orders.forEach((val, index) => {
+//         if (val.buyer) {
+//           buyerUsername = val.buyer.firstName;
+//         }
+//       });
+//     }
+//     if (buyerUsername) {
+//       const student = await Student.findOne({ Username: buyerUsername });
+//       if (student) {
+//         for (const order of orderResponse.data.orders) {
+//           const Product_Id = order.products[0].name; // Assuming you're interested in the first product
+//           const Purchase_Amount = order.payMethod.amount;
+//           const Method = order.payMethod.type;
+//           const Student_ID = student._id;
+//           const Pack = await Package.findById(Product_Id).populate(
+//             "Teacher_IDs"
+//           );
+//           console.log(Pack);
+//           const existingData = await CustomPackage.findOne({ Student_ID:Student_ID, Package_ID:Pack._id });
+//           console.log(existingData)
+//           // Map Teacher_IDs and extract Availability
+//           const Teacher_IDs = await Pack.Teacher_IDs
+//           // Create a new booking
+//           const Status = "Scheduled";
+//           console.log(Pack.Student_ID === Student_ID);
+//           const existingBooking = await Booking.findOne({
+//             Student_ID,
+//             Package_ID: Product_Id,
+//           });
+//           if (!existingBooking) {
+//             const newBooking = new Booking({
+//               Student_ID,
+//               Teacher_ID: Teacher_IDs,
+//               Package_ID: Product_Id,
+//               Status,
+//               Scheduled_Dates:[existingData.Scheduled_Dates],
+//             });
 
-            await newBooking.save();
-            // console.log(newBooking);
-            const Booking_ID = newBooking._id;
+//             await newBooking.save();
+//             // console.log(newBooking);
+//             const Booking_ID = newBooking._id;
 
-            // Add a payment
-            const newPayment = new Payment({
-              Booking_ID,
-              Student_ID,
-              Package_ID: Product_Id,
-              Purchase_Amount,
-              Status,
-              Method,
-            });
+//             // Add a payment
+//             const newPayment = new Payment({
+//               Booking_ID,
+//               Student_ID,
+//               Package_ID: Product_Id,
+//               Purchase_Amount,
+//               Status,
+//               Method,
+//             });
 
-            // Save the new payment to the database
-            await newPayment.save();
+//             // Save the new payment to the database
+//             await newPayment.save();
 
-            // Update the package with the student ID
-            await Package.findByIdAndUpdate(Product_Id, { Student_ID });
-            try {
-              const notificationbody = `${student.Username}, with Email ID - ${student.Email}, have Successfully Purchased a Package with Package Name - ${Pack.Package_Name} with Payment ID - ${newPayment._id} and the Order ID is  - ${orderId} `;
-              const userid = student._id;
-              await NotificationHandler_Student(notificationbody, userid);
-            } catch (notificationError) {
-              console.log("Error creating notification:", notificationError);
-            }
+//             // Update the package with the student ID
+//             await Package.findByIdAndUpdate(Product_Id, { Student_ID });
+//             try {
+//               const notificationbody = `${student.Username}, with Email ID - ${student.Email}, have Successfully Purchased a Package with Package Name - ${Pack.Package_Name} with Payment ID - ${newPayment._id} and the Order ID is  - ${orderId} `;
+//               const userid = student._id;
+//               await NotificationHandler_Student(notificationbody, userid);
+//             } catch (notificationError) {
+//               console.log("Error creating notification:", notificationError);
+//             }
 
-            try {
-              await Promise.all(
-                Pack.Teacher_IDs.map(async (teacher, index) => {
-                  const notificationbody = `A new lesson was Booked by the Student with Name - ${student.Username}, with Email ID - ${student.Email}, and have Successfully Purchased a Package with Package Name - ${Pack.Package_Name} in which - ${teacher.Username} is assigned.`;
-                  const userid = teacher._id;
-                  await NotificationHandler_Teacher(notificationbody, userid);
-                })
-              );
-            } catch (notificationError) {
-              console.log("Error creating notification:", notificationError);
-            }
-          } else {
-            res
-              .status(500)
-              .json({ message: "Student have already Purchased this Package" });
-          }
-        }
-      } else {
-        res.status(500).json({ message: "Student not found" });
-      }
-    } else {
-      res.status(404).json({ message: "You Have Cancelled The Order" });
-    }
-    res.status(200).json({ orderData: orderResponse.data });
-  } catch (error) {
-    res.status(500).json({ error: error });
-  }
-});
+//             try {
+//               await Promise.all(
+//                 Pack.Teacher_IDs.map(async (teacher, index) => {
+//                   const notificationbody = `A new lesson was Booked by the Student with Name - ${student.Username}, with Email ID - ${student.Email}, and have Successfully Purchased a Package with Package Name - ${Pack.Package_Name} in which - ${teacher.Username} is assigned.`;
+//                   const userid = teacher._id;
+//                   await NotificationHandler_Teacher(notificationbody, userid);
+//                 })
+//               );
+//             } catch (notificationError) {
+//               console.log("Error creating notification:", notificationError);
+//             }
+//           } else {
+//             res
+//               .status(500)
+//               .json({ message: "Student have already Purchased this Package" });
+//           }
+//         }
+//       } else {
+//         res.status(500).json({ message: "Student not found" });
+//       }
+//     } else {
+//       res.status(404).json({ message: "You Have Cancelled The Order" });
+//     }
+//     res.status(200).json({ orderData: orderResponse.data });
+//   } catch (error) {
+//     res.status(500).json({ error: error });
+//   }
+// });
 
 exports.GetPaymentsByStudentID = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -2219,3 +2223,151 @@ exports.SearchPackagebyPackageName = async(req,res) => {
       res.status(500).json({message:"Internal Server Error "})
   }
 }
+
+
+
+exports.authorizePayment = catchAsyncErrors(async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    console.log(orderId);
+    const authUrl =
+      "https://secure.snd.payu.com/pl/standard/user/oauth/authorize";
+    const authData =
+      "grant_type=client_credentials&client_id=475638&client_secret=59624ea5a5428ec0d8658ca239b972d8";
+    const authResponse = await axios.post(authUrl, authData, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+    const authToken = authResponse.data.access_token;
+    const orderUrl = `https://secure.snd.payu.com/api/v2_1/orders/${orderId}`;
+    const orderHeaders = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    };
+    const orderResponse = await axios.get(orderUrl, {
+      headers: orderHeaders,
+    });
+    let buyerUsername = "";
+    if (orderResponse.data) {
+      orderResponse.data.orders.forEach((val, index) => {
+        if (val.buyer) {
+          buyerUsername = val.buyer.firstName;
+        }
+      });
+    }
+    if (buyerUsername) {
+      const student = await Student.findOne({ Username: buyerUsername });
+      if (student) {
+        for (const order of orderResponse.data.orders) {
+          const Product_Id = order.products[0].name; // Assuming you're interested in the first product
+          const Purchase_Amount = order.payMethod.amount;
+          const Method = order.payMethod.type;
+          const Student_ID = student._id;
+          const Pack = await Package.findById(Product_Id).populate(
+            "Teacher_IDs"
+          );
+          // console.log(Pack);
+          const existingData = await CustomPackage.findOne({
+            Student_ID: Student_ID,
+            Package_ID: Pack._id,
+          });
+          // console.log(existingData);
+          // Map Teacher_IDs and extract Availability
+          const Teacher_IDs = await Pack.Teacher_IDs;
+          // Create a new booking
+          // ------------------------------------------------------------------------------------------------------------------------------
+          const Status = "Scheduled";
+          // console.log(Pack.Student_ID === Student_ID);
+          const existingBooking = await Booking.findOne({
+            Student_ID,
+            Package_ID: Product_Id,
+          });
+
+          console.log(existingData.Scheduled_Dates[0]);
+          const singleDate = existingData.Scheduled_Dates[0];
+          const dateKeys = Object.keys(singleDate);
+
+          
+
+          if (!existingBooking) {
+
+            // for (const SingleObject of single) {
+            //   console.log(SingleObject);
+            // }
+
+            let Booking_ID;
+            for (const dateKey of dateKeys) {
+              let SingleScheduledData = singleDate[dateKey];
+              console.log(SingleScheduledData);
+              const Scheduled = { [dateKey]: [...SingleScheduledData] };
+              console.log(Scheduled)
+
+              const newBooking = new Booking({
+                Student_ID,
+                Teacher_ID: Teacher_IDs,
+                Package_ID: Product_Id,
+                Status,
+                Scheduled_Dates: [[Scheduled]],
+              });
+
+              await newBooking.save();
+              // console.log(newBooking);
+               Booking_ID = newBooking._id;
+
+         
+            }
+          
+                 const newPayment = new Payment({
+                   Booking_ID,
+                   Student_ID,
+                   Package_ID: Product_Id,
+                   Purchase_Amount,
+                   Status,
+                   Method,
+                 });
+
+                 // Save the new payment to the database
+                 await newPayment.save();
+
+                 // Update the package with the student ID
+                 await Package.findByIdAndUpdate(Product_Id, { Student_ID });
+
+            // Add a payment
+           
+            try {
+              const notificationbody = `${student.Username}, with Email ID - ${student.Email}, have Successfully Purchased a Package with Package Name - ${Pack.Package_Name} with Payment ID - ${newPayment._id} and the Order ID is  - ${orderId} `;
+              const userid = student._id;
+              await NotificationHandler_Student(notificationbody, userid);
+            } catch (notificationError) {
+              console.log("Error creating notification:", notificationError);
+            }
+
+            try {
+              await Promise.all(
+                Pack.Teacher_IDs.map(async (teacher, index) => {
+                  const notificationbody = `A new lesson was Booked by the Student with Name - ${student.Username}, with Email ID - ${student.Email}, and have Successfully Purchased a Package with Package Name - ${Pack.Package_Name} in which - ${teacher.Username} is assigned.`;
+                  const userid = teacher._id;
+                  await NotificationHandler_Teacher(notificationbody, userid);
+                })
+              );
+            } catch (notificationError) {
+              console.log("Error creating notification:", notificationError);
+            }
+          } else {
+            return res
+              .status(500)
+              .json({ message: "Student have already Purchased this Package" });
+          }
+        }
+      } else {
+        return res.status(500).json({ message: "Student not found" });
+      }
+    } else {
+      return res.status(404).json({ message: "You Have Cancelled The Order" });
+    }
+    return res.status(200).json({ orderData: orderResponse.data });
+  } catch (error) {
+    res.status(500).json({ error: error });
+  }
+});
