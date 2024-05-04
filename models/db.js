@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb://localhost:27017/Speakable_English");
-// mongoose.connect(
-//   "mongodb+srv://SpeakableEnglish:UNU7mle2x5LlDgJg@serverlessinstance0.pgpouhv.mongodb.net/"
-// );
+// mongoose.connect("mongodb://localhost:27017/Speakable_English");
+mongoose.connect(
+  "mongodb+srv://SpeakableEnglish:UNU7mle2x5LlDgJg@serverlessinstance0.pgpouhv.mongodb.net/"
+);
 
 const db = mongoose.connection;
 
